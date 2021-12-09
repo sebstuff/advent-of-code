@@ -1,0 +1,61 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2015 - Day 2
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+input = Kino.Input.textarea("Please enter the input:")
+```
+
+## Part 1
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Enum.flat_map(&String.split(&1, "x", trim: true))
+|> Enum.map(&String.to_integer/1)
+|> Enum.chunk_every(3)
+# |> IO.inspect()
+|> Enum.map(fn [l, w, h] ->
+  side_areas = [l * w, w * h, h * l]
+  Enum.sum(side_areas) * 2 + Enum.min(side_areas)
+end)
+|> Enum.sum()
+```
+
+```output
+1588178
+```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Enum.flat_map(&String.split(&1, "x", trim: true))
+|> Enum.map(&String.to_integer/1)
+|> Enum.chunk_every(3)
+|> Enum.map(fn dimensions ->
+  shortest_sides = dimensions |> Enum.sort() |> Enum.take(2)
+  side_product = Enum.reduce(dimensions, 1, &(&1 * &2))
+  side_product + 2 * Enum.sum(shortest_sides)
+end)
+|> Enum.sum()
+```
+
+```output
+3783758
+```

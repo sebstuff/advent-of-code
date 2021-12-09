@@ -1,0 +1,126 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2021 - Day 6
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    input
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.to_integer/1)
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+```output
+:ok
+```
+
+## Part 1
+
+```elixir
+defmodule Day6.Part1 do
+  def solve(input, days) do
+    input
+    |> simulate(days)
+    |> Enum.count()
+  end
+
+  defp simulate(fish, 0), do: fish
+
+  defp simulate(fish, days) do
+    baby_fish =
+      fish
+      |> Enum.filter(fn days_left -> days_left == 0 end)
+      |> Enum.map(fn _ -> 8 end)
+
+    older_fish =
+      Enum.map(fish, fn days_left ->
+        if days_left == 0, do: 6, else: days_left - 1
+      end)
+
+    simulate(older_fish ++ baby_fish, days - 1)
+  end
+end
+
+Day6.Part1.solve(my_input, 80)
+```
+
+```output
+390011
+```
+
+## Part 2
+
+Part 2 just asks you to run for 256 days.  The part 1 solution takes way too long to solve.
+
+Instead of modelling each individual fish in a list of fishes, we should keep map of how many fish are at the next number of days to reproduce.
+
+So instead of storing data like this: [1, 5, 4, 8, 7, 1, 3, 5]
+
+Store it like this: %{1 => 2, 5 => 2, 4 => 1, 8 => 1, 7 => 1, 3 => 1}.
+
+```elixir
+defmodule Day6.Part2 do
+  def solve(input, days) do
+    input
+    |> Enum.frequencies()
+    |> simulate(days)
+    |> Enum.reduce(0, fn {_, count}, sofar -> count + sofar end)
+  end
+
+  defp simulate(fish, 0), do: fish
+
+  defp simulate(fish, days) do
+    baby_fish = Map.get(fish, 0)
+
+    older_fish =
+      Enum.reduce(fish, %{}, fn {days_left, n}, sofar ->
+        days_left = if days_left == 0, do: 6, else: days_left - 1
+        Map.update(sofar, days_left, n, fn v -> n + v end)
+      end)
+
+    fish = if baby_fish, do: Map.put_new(older_fish, 8, baby_fish), else: older_fish
+
+    simulate(fish, days - 1)
+  end
+end
+
+Day6.Part2.solve(my_input, 256)
+```
+
+```output
+1746710169834
+```

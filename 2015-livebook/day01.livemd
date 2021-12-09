@@ -1,0 +1,52 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2015 - Day 1
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+input = Kino.Input.textarea("Please enter the input:")
+```
+
+## Part 1
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.to_charlist()
+|> Enum.reduce(0, fn
+  ?(, floor -> floor + 1
+  ?), floor -> floor - 1
+end)
+```
+
+```output
+138
+```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.to_charlist()
+|> Enum.reduce_while({0, 0}, fn
+  _, {-1, n} -> {:halt, n}
+  ?(, {floor, n} -> {:cont, {floor + 1, n + 1}}
+  ?), {floor, n} -> {:cont, {floor - 1, n + 1}}
+end)
+```
+
+```output
+1771
+```

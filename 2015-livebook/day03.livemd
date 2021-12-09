@@ -1,0 +1,84 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2015 - Day 3
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+input = Kino.Input.textarea("Please enter the input:")
+```
+
+## Part 1
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.to_charlist()
+|> Enum.reduce({{0, 0}, %{}}, fn direction, {{x, y}, houses} ->
+  {x, y} =
+    case direction do
+      ?v -> {x, y - 1}
+      ?^ -> {x, y + 1}
+      ?< -> {x - 1, y}
+      ?> -> {x + 1, y}
+    end
+
+  houses = Map.update(houses, {x, y}, 1, &(&1 + 1))
+  {{x, y}, houses}
+end)
+|> then(fn {_pos, houses} -> houses end)
+|> Enum.count()
+```
+
+```output
+2572
+```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.to_charlist()
+|> Enum.reduce(
+  {%{santa: {0, 0}, robo_santa: {0, 0}}, :santa, %{{0, 0} => 2}},
+  fn direction, {positions, whose_turn, houses} ->
+    {x, y} = Map.get(positions, whose_turn)
+
+    position =
+      case direction do
+        ?v -> {x, y - 1}
+        ?^ -> {x, y + 1}
+        ?< -> {x - 1, y}
+        ?> -> {x + 1, y}
+      end
+
+    houses = Map.update(houses, position, 1, &(&1 + 1))
+    positions = Map.put(positions, whose_turn, position)
+
+    whose_turn =
+      case whose_turn do
+        :santa -> :robo_santa
+        :robo_santa -> :santa
+      end
+
+    {positions, whose_turn, houses}
+  end
+)
+|> then(fn {_positions, _whose_turn, houses} -> houses end)
+|> Enum.count()
+```
+
+```output
+2631
+```

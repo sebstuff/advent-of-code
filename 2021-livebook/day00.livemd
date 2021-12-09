@@ -1,0 +1,39 @@
+# Advent of Code 2021 - Day X
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    input
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+## Part 1

@@ -1,0 +1,155 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2021 - Day 5
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.flat_map(&String.split(&1, " -> ", trim: true))
+    |> Enum.flat_map(&String.split(&1, ","))
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.chunk_every(2)
+    |> Enum.map(&List.to_tuple/1)
+    |> Enum.chunk_every(2)
+    |> Enum.map(&List.to_tuple/1)
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+```output
+:ok
+```
+
+## Part 1
+
+```elixir
+my_input
+|> Enum.filter(fn {{from_row, from_col}, {to_row, to_col}} ->
+  from_row == to_row or from_col == to_col
+end)
+# |> IO.inspect()
+|> Enum.flat_map(fn {{from_row, from_col}, {to_row, to_col}} ->
+  for row <- from_row..to_row,
+      col <- from_col..to_col do
+    {row, col}
+  end
+end)
+|> Enum.frequencies()
+# |> IO.inspect()
+|> Enum.filter(fn {_point, count} -> count > 1 end)
+|> Enum.count()
+```
+
+```output
+5092
+```
+
+## Part 2
+
+I'm having trouble getting this to finish.  If I use this point generation function in part 1, part 1 runs faster.  So the problem isn't that the point generation algorithm is slower than the one in part 1, the problem is its not fast enough to handle the lines we aren't ignoring anymore.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Apparently, modules are faster because they actually get compiled.  This runs much faster.
+
+```elixir
+defmodule Day5.Part1 do
+  def solve(input) do
+    input
+    |> Enum.filter(fn {{from_row, from_col}, {to_row, to_col}} ->
+      from_row == to_row or from_col == to_col
+    end)
+    # |> IO.inspect()
+    |> Enum.flat_map(fn {{from_row, from_col}, {to_row, to_col}} ->
+      for row <- from_row..to_row,
+          col <- from_col..to_col do
+        {row, col}
+      end
+    end)
+    |> Enum.frequencies()
+    |> Enum.filter(fn {_point, count} -> count > 1 end)
+    |> Enum.count()
+  end
+end
+
+Day5.Part1.solve(my_input)
+```
+
+```output
+5092
+```
+
+```elixir
+defmodule Day5.Part2 do
+  def solve(input) do
+    input
+    |> Enum.flat_map(fn {{from_row, from_col}, {to_row, to_col}} ->
+      distance = Enum.max([abs(from_row - to_row), abs(from_col - to_col)])
+
+      for step <- 0..distance do
+        row =
+          cond do
+            from_row == to_row -> from_row
+            from_row < to_row -> from_row + step
+            true -> from_row - step
+          end
+
+        col =
+          cond do
+            from_col == to_col -> from_col
+            from_col < to_col -> from_col + step
+            true -> from_col - step
+          end
+
+        {row, col}
+      end
+    end)
+    # |> IO.inspect()
+    |> Enum.frequencies()
+    # |> IO.inspect()
+    |> Enum.count(fn {_point, count} -> count > 1 end)
+  end
+end
+
+Day5.Part2.solve(my_input)
+# |> IO.inspect()
+```
+
+```output
+20484
+```
