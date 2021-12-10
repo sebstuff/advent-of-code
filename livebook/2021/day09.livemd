@@ -61,7 +61,7 @@ defmodule Day9.Part1 do
     |> Enum.sum()
   end
 
-  defp low_points(input) do
+  def low_points(input) do
     Enum.reduce(0..(Enum.count(input) - 1), [], fn x, low_points ->
       row = Enum.at(input, x)
 
@@ -69,11 +69,7 @@ defmodule Day9.Part1 do
         height = height(input, {x, y})
 
         min_neighbor_height =
-          [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}]
-          |> Enum.filter(fn {x, y} ->
-            # remove out of bounds neighbors
-            x >= 0 and y >= 0 and x < Enum.count(input) and y < Enum.count(row)
-          end)
+          neighbors({x, y}, Enum.count(input), Enum.count(row))
           |> Enum.map(fn position -> height(input, position) end)
           |> Enum.min()
 
@@ -86,8 +82,16 @@ defmodule Day9.Part1 do
     end)
   end
 
-  defp height(input, {x, y}) do
+  def height(input, {x, y}) do
     input |> Enum.at(x) |> Enum.at(y)
+  end
+
+  def neighbors({x, y}, max_x, max_y) do
+    [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}]
+    |> Enum.filter(fn {x, y} ->
+      # remove out of bounds neighbors
+      x >= 0 and y >= 0 and x < max_x and y < max_y
+    end)
   end
 end
 
@@ -96,4 +100,42 @@ Day9.Part1.solve(my_input)
 
 ```output
 452
+```
+
+## Part 2
+
+```elixir
+defmodule Day9.Part2 do
+  def solve(input) do
+    input
+    |> Day9.Part1.low_points()
+    |> Enum.map(&basin(&1, input))
+    |> Enum.map(&Enum.count/1)
+    |> Enum.sort()
+    |> Enum.reverse()
+    |> Enum.take(3)
+    |> Enum.product()
+  end
+
+  def basin(position, input, sofar \\ []) do
+    sofar = [position | sofar]
+    height = Day9.Part1.height(input, position)
+    max_x = Enum.count(input)
+    max_y = Enum.count(Enum.at(input, 0))
+
+    Day9.Part1.neighbors(position, max_x, max_y)
+    |> Enum.filter(fn neighbor ->
+      neighbor_height = Day9.Part1.height(input, neighbor)
+      neighbor_height > height and neighbor_height < 9
+    end)
+    |> Enum.reduce(sofar, &basin(&1, input, &2))
+    |> Enum.uniq()
+  end
+end
+
+Day9.Part2.solve(my_input)
+```
+
+```output
+1263735
 ```
