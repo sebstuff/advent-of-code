@@ -1,0 +1,99 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2021 - Day 9
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.to_charlist/1)
+    |> Enum.map(&Enum.map(&1, fn ch -> ch - ?0 end))
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+```output
+:ok
+```
+
+## Part 1
+
+```elixir
+defmodule Day9.Part1 do
+  def solve(input) do
+    input
+    |> low_points()
+    |> Enum.map(&height(input, &1))
+    |> Enum.map(&(&1 + 1))
+    |> Enum.sum()
+  end
+
+  defp low_points(input) do
+    Enum.reduce(0..(Enum.count(input) - 1), [], fn x, low_points ->
+      row = Enum.at(input, x)
+
+      Enum.reduce(0..(Enum.count(row) - 1), low_points, fn y, low_points ->
+        height = height(input, {x, y})
+
+        min_neighbor_height =
+          [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}]
+          |> Enum.filter(fn {x, y} ->
+            # remove out of bounds neighbors
+            x >= 0 and y >= 0 and x < Enum.count(input) and y < Enum.count(row)
+          end)
+          |> Enum.map(fn position -> height(input, position) end)
+          |> Enum.min()
+
+        if height < min_neighbor_height do
+          [{x, y} | low_points]
+        else
+          low_points
+        end
+      end)
+    end)
+  end
+
+  defp height(input, {x, y}) do
+    input |> Enum.at(x) |> Enum.at(y)
+  end
+end
+
+Day9.Part1.solve(my_input)
+```
+
+```output
+452
+```
