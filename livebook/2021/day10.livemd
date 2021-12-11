@@ -59,17 +59,21 @@ defmodule Day10.Part1 do
     ?> => 25137
   }
 
+  def solve(input) do
+    input
+    |> Enum.map(&find_illegal_character(&1, []))
+    |> Enum.map(&Map.get(@illegal_character_points, &1, 0))
+    |> Enum.sum()
+  end
+
   @chunk_pairs %{
     ?( => ?),
     ?[ => ?],
     ?{ => ?},
     ?< => ?>
   }
-  def solve(input) do
-    input
-    |> Enum.map(&find_illegal_character(&1, []))
-    |> Enum.map(&Map.get(@illegal_character_points, &1, 0))
-    |> Enum.sum()
+  def end_char(char) do
+    @chunk_pairs[char]
   end
 
   defp find_illegal_character([], _stack), do: nil
@@ -96,4 +100,61 @@ Day10.Part1.solve(my_input)
 
 ```output
 271245
+```
+
+## Part 2
+
+```elixir
+defmodule Day10.Part2 do
+  @autocomplete_character_points %{
+    ?) => 1,
+    ?] => 2,
+    ?} => 3,
+    ?> => 4
+  }
+
+  def solve(input) do
+    input
+    |> Enum.map(&autocomplete_characters(&1, []))
+    |> Enum.filter(&(&1 != nil))
+    |> Enum.map(&score_autocomplete/1)
+    |> Enum.sort()
+    |> then(&Enum.at(&1, div(Enum.count(&1), 2)))
+  end
+
+  defp autocomplete_characters([], []), do: nil
+
+  defp autocomplete_characters([], stack) do
+    Enum.map(stack, &Day10.Part1.end_char/1)
+  end
+
+  defp autocomplete_characters([char | line], stack) do
+    end_char = Day10.Part1.end_char(char)
+
+    if end_char == nil do
+      [start_char | stack] = stack
+
+      if char != Day10.Part1.end_char(start_char) do
+        nil
+      else
+        autocomplete_characters(line, stack)
+      end
+    else
+      autocomplete_characters(line, [char | stack])
+    end
+  end
+
+  defp score_autocomplete(autocomplete) do
+    Enum.reduce(autocomplete, 0, fn char, total ->
+      score = @autocomplete_character_points[char]
+      total * 5 + score
+    end)
+  end
+end
+
+Day10.Part2.solve(my_input)
+```
+
+```output
+1685293086
 ```
