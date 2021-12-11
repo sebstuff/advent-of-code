@@ -1,0 +1,156 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2021 - Day 11
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    lines =
+      input
+      |> String.split("\n", trim: true)
+
+    for {line, y} <- Enum.with_index(lines),
+        {char, x} <- Enum.with_index(String.to_charlist(line)),
+        into: %{} do
+      {{x, y}, char - ?0}
+    end
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+```output
+:ok
+```
+
+## Part 1
+
+```elixir
+defmodule Day11.Part1 do
+  def solve(input) do
+    take_steps({input, 0}, 100)
+    |> then(fn {_input, flash_count} -> flash_count end)
+  end
+
+  defp take_steps({input, flash_count}, 0), do: {input, flash_count}
+
+  defp take_steps({input, flash_count}, n) do
+    {input, new_flash_count} = step(input)
+    take_steps({input, flash_count + new_flash_count}, n - 1)
+  end
+
+  def step(input) do
+    input
+    |> Map.map(fn {_pos, energy} -> energy + 1 end)
+    |> flash(MapSet.new())
+  end
+
+  defp flash(input, flashed) do
+    flashing =
+      input
+      |> Enum.filter(fn {pos, energy} ->
+        energy > 9 and !MapSet.member?(flashed, pos)
+      end)
+      |> Enum.map(fn {pos, _energy} -> pos end)
+
+    flashed =
+      flashing
+      |> Enum.reduce(flashed, &MapSet.put(&2, &1))
+
+    neighbors =
+      flashing
+      |> Enum.flat_map(fn pos -> neighbors(input, pos) end)
+      |> Enum.filter(&(!MapSet.member?(flashed, &1)))
+
+    input =
+      neighbors
+      |> Enum.reduce(input, fn pos, sofar ->
+        Map.update!(sofar, pos, fn energy -> energy + 1 end)
+      end)
+
+    if Enum.count(flashing) == 0 do
+      input =
+        Map.map(input, fn {_pos, energy} ->
+          if energy > 9, do: 0, else: energy
+        end)
+
+      {input, Enum.count(flashed)}
+    else
+      flash(input, flashed)
+    end
+  end
+
+  defp neighbors(input, {x, y}) do
+    for x2 <- (x - 1)..(x + 1),
+        y2 <- (y - 1)..(y + 1),
+        x != x2 or y != y2,
+        pos2 = {x2, y2},
+        Map.has_key?(input, pos2) do
+      pos2
+    end
+  end
+end
+
+Day11.Part1.solve(my_input)
+```
+
+```output
+1729
+```
+
+## Part 2
+
+```elixir
+defmodule Day11.Part2 do
+  def solve(input) do
+    take_steps_while(input, 0, &Enum.any?(&1, fn {_pos, energy} -> energy != 0 end))
+    |> then(fn {_input, step_count} -> step_count end)
+  end
+
+  defp take_steps_while(input, step_count, fun) do
+    if !fun.(input) do
+      {input, step_count}
+    else
+      {input, _flash_count} = Day11.Part1.step(input)
+      take_steps_while(input, step_count + 1, fun)
+    end
+  end
+end
+
+Day11.Part2.solve(my_input)
+```
+
+```output
+237
+```
