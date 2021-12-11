@@ -1,0 +1,99 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Advent of Code 2021 - Day 10
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+```elixir
+example_input = Kino.Input.textarea("Please enter the example input:")
+```
+
+```elixir
+my_input = Kino.Input.textarea("Please enter your input:")
+```
+
+```elixir
+defmodule Parser do
+  def parse_input(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.to_charlist/1)
+  end
+end
+
+example_input =
+  example_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+my_input =
+  my_input
+  |> Kino.Input.read()
+  |> Parser.parse_input()
+
+:ok
+```
+
+```output
+:ok
+```
+
+## Part 1
+
+```elixir
+defmodule Day10.Part1 do
+  @illegal_character_points %{
+    ?) => 3,
+    ?] => 57,
+    ?} => 1197,
+    ?> => 25137
+  }
+
+  @chunk_pairs %{
+    ?( => ?),
+    ?[ => ?],
+    ?{ => ?},
+    ?< => ?>
+  }
+  def solve(input) do
+    input
+    |> Enum.map(&find_illegal_character(&1, []))
+    |> Enum.map(&Map.get(@illegal_character_points, &1, 0))
+    |> Enum.sum()
+  end
+
+  defp find_illegal_character([], _stack), do: nil
+
+  defp find_illegal_character([char | line], stack) do
+    end_char = @chunk_pairs[char]
+
+    if end_char == nil do
+      [start_char | stack] = stack
+
+      if char != @chunk_pairs[start_char] do
+        char
+      else
+        find_illegal_character(line, stack)
+      end
+    else
+      find_illegal_character(line, [char | stack])
+    end
+  end
+end
+
+Day10.Part1.solve(my_input)
+```
+
+```output
+271245
+```
