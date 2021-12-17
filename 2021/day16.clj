@@ -4,23 +4,28 @@
             [clojure.tools.trace :refer [deftrace]]))
 
 
-(def hex-to-binary
-  {\0 "0000"
-   \1 "0001"
-   \2 "0010"
-   \3 "0011"
-   \4 "0100"
-   \5 "0101"
-   \6 "0110"
-   \7 "0111"
-   \8 "1000"
-   \9 "1001"
-   \A "1010"
-   \B "1011"
-   \C "1100"
-   \D "1101"
-   \E "1110"
-   \F "1111"})
+(defn hex->binary
+  [hex]
+  (let [conversion-table
+        {\0 "0000"
+         \1 "0001"
+         \2 "0010"
+         \3 "0011"
+         \4 "0100"
+         \5 "0101"
+         \6 "0110"
+         \7 "0111"
+         \8 "1000"
+         \9 "1001"
+         \A "1010"
+         \B "1011"
+         \C "1100"
+         \D "1101"
+         \E "1110"
+         \F "1111"}]
+    (->> hex
+         (string/trim)
+         (mapcat conversion-table))))
 
 (defn str-split-at
   [n binary]
@@ -148,17 +153,17 @@
       :literal-value (literal-value header binary))))
 
 (m/match (packet "110100101111111000101000")
-           [{:version 6 :type :literal-value :type-id 4
-             :literal-value 2021} _] true)
+         [{:version 6 :type :literal-value :type-id 4
+           :literal-value 2021} _] true)
 (m/match (packet "00111000000000000110111101000101001010010001001000000000")
-           [{:version 1 :type :operator :type-id 6
-             :subpackets [{:type :literal-value :literal-value 10}
-                          {:type :literal-value :literal-value 20}]} _] true)
+         [{:version 1 :type :operator :type-id 6
+           :subpackets [{:type :literal-value :literal-value 10}
+                        {:type :literal-value :literal-value 20}]} _] true)
 (m/match (packet "11101110000000001101010000001100100000100011000001100000")
-           [{:version 7 :type :operator :type-id 3
-             :subpackets [{:type :literal-value :literal-value 1}
-                          {:type :literal-value :literal-value 2}
-                          {:type :literal-value :literal-value 3}]} _] true)
+         [{:version 7 :type :operator :type-id 3
+           :subpackets [{:type :literal-value :literal-value 1}
+                        {:type :literal-value :literal-value 2}
+                        {:type :literal-value :literal-value 3}]} _] true)
 
 (defn part1
   [packet]
@@ -169,35 +174,30 @@
 
 (assert (= 16
            (->> "8A004A801A8002F478"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (part1))))
 (assert (= 12
            (->> "620080001611562C8802118E34"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (part1))))
 (assert (= 23
            (->> "C0015000016115A2E0802F182340"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (part1))))
 (assert (= 31
            (->> "A0016C880162017C3686B18A3D4780"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (part1))))
 (->> (slurp "day16.input")
-     (string/trim)
-     (mapcat hex-to-binary)
+     (hex->binary)
      (packet)
      (first)
      (part1)
@@ -205,71 +205,62 @@
 
 (assert (= 3
            (->> "C200B40A82"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 54
            (->> "04005AC33890"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 7
            (->> "880086C3E88112"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 9
            (->> "CE00C43D881120"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 1
            (->> "D8005AC2A8F0"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 0
            (->> "F600BC2D8F"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 0
            (->> "9C005AC2F8F0"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (assert (= 1
            (->> "9C0141080250320F1802104A08"
-                (string/trim)
-                (mapcat hex-to-binary)
+                (hex->binary)
                 (packet)
                 (first)
                 (value))))
 
 (->> (slurp "day16.input")
-     (string/trim)
-     (mapcat hex-to-binary)
+     (hex->binary)
      (packet)
      (first)
      (value)
