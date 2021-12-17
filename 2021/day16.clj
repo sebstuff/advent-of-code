@@ -107,14 +107,37 @@
                [subpackets binary]
                (recur subpackets binary)))))))
 
+(defn operation
+  "Given the packet's type-id, finds the operation"
+  [type-id]
+  (case type-id
+    0 +
+    1 *
+    2 min
+    3 max
+    5 #(if (> %1 %2) 1 0)
+    6 #(if (< %1 %2) 1 0)
+    7 #(if (= %1 %2) 1 0)))
 
 (defn operator
   "parses 'operator' packet"
   [header binary]
   (let [[length-type & binary] binary
-        [subpackets binary] (operator-subpackets length-type binary)]
-    [(assoc header :subpackets subpackets) binary]))
+        [subpackets binary] (operator-subpackets length-type binary)
+        operation (operation (:type-id header))
+        packet (merge header {:subpackets subpackets :operation operation})]
+    [packet binary]))
 
+
+(defn value
+  "finds the value of a packet"
+  [packet]
+  (case (:type packet)
+    :literal-value (:literal-value packet)
+    :operator (let [subpackets (:subpackets packet)
+                    subpacket-values (map value subpackets)
+                    value (apply (:operation packet) subpacket-values)]
+                value)))
 
 (defn packet
   "parses a packet"
@@ -143,6 +166,7 @@
     :literal-value (:version packet)
     :operator (+ (:version packet)
                  (reduce + 0 (map part1 (:subpackets packet))))))
+
 (assert (= 16
            (->> "8A004A801A8002F478"
                 (string/trim)
@@ -171,11 +195,82 @@
                 (packet)
                 (first)
                 (part1))))
-
 (->> (slurp "day16.input")
      (string/trim)
      (mapcat hex-to-binary)
      (packet)
      (first)
      (part1)
-     (println))
+     (println "part1:"))
+
+(assert (= 3
+           (->> "C200B40A82"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 54
+           (->> "04005AC33890"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 7
+           (->> "880086C3E88112"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 9
+           (->> "CE00C43D881120"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 1
+           (->> "D8005AC2A8F0"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 0
+           (->> "F600BC2D8F"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 0
+           (->> "9C005AC2F8F0"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(assert (= 1
+           (->> "9C0141080250320F1802104A08"
+                (string/trim)
+                (mapcat hex-to-binary)
+                (packet)
+                (first)
+                (value))))
+
+(->> (slurp "day16.input")
+     (string/trim)
+     (mapcat hex-to-binary)
+     (packet)
+     (first)
+     (value)
+     (println "part2:"))
