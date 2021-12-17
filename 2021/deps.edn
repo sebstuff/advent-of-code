@@ -1,0 +1,3 @@
+{:deps
+ {org.clojure/core.match {:mvn/version "1.0.0"}
+  org.clojure/tools.trace {:mvn/version "0.7.11"}}}
