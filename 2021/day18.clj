@@ -1,6 +1,7 @@
 (ns day18
   (:require [clojure.string :as string]
             [clojure.edn :as edn]
+            [clojure.math.combinatorics :as combo]
             [clojure.zip :as zip]))
 
 (defn add
@@ -90,7 +91,7 @@
       (recur (zip/next z)))))
 
 (assert (= [[[[0,9],2],3],4]
-            (explode [[[[[9,8],1],2],3],4])))
+           (explode [[[[[9,8],1],2],3],4])))
 (assert (= [7,[6,[5,[7,0]]]]
            (explode [7,[6,[5,[4,[3,2]]]]])))
 (assert (= [[6,[5,[7,0]]],3]
@@ -103,13 +104,10 @@
 (defn sf-reduce
   [n]
   (if-let [exploded-n (explode n)]
-    (do
-      (recur exploded-n))
+    (recur exploded-n)
     (if-let [split-n (split n)]
-      (do
-        (recur split-n))
-      (do
-        n))))
+      (recur split-n)
+      n)))
 
 (assert (= [[3,[2,[8,0]]],[9,[5,[7,0]]]]
            (sf-reduce [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])))
@@ -133,13 +131,33 @@
 (assert (= 1137 (magnitude [[[[5,0],[7,4]],[5,5]],[6,6]])))
 (assert (= 3488 (magnitude [[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]])))
 
-(defn part1
+
+(defn read-numbers
   [filename]
   (->> (slurp filename)
        (string/split-lines)
-       (map edn/read-string)
+       (map edn/read-string)))
+
+
+(defn part1
+  [filename]
+  (->> filename
+       read-numbers
        (reduce (fn [sofar n]
                  (sf-reduce (add sofar n))))
        (magnitude)))
 
 (println "part1" (part1 "day18.input"))
+
+
+(defn part2
+  [filename]
+  (let [numbers (read-numbers filename)
+        combos (combo/combinations numbers 2)
+        additions (mapcat (fn [[n1 n2]]
+                            [(sf-reduce (add n1 n2))
+                             (sf-reduce (add n2 n1))]) combos)
+        magnitudes (map magnitude additions)]
+    (apply max magnitudes)))
+
+(println "part2" (part2 "day18.input"))
