@@ -27,7 +27,6 @@
      (let [random (java.util.Random. 2021)]
        (repeatedly 1000000 #(+ 10 (.nextInt random 90))))))
 
-  (sliding)
   ;; 600ms
   (->> nums
        (partition 2 1)
