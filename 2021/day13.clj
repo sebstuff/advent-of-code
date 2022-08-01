@@ -12,37 +12,23 @@
                     (let [[x y] (string/split dot #",")
                           x (Integer/parseInt x)
                           y (Integer/parseInt y)]
-                      [x y])) dots)
+                      {:x x :y y})) dots)
         instructions (map (fn str->instructions[instruction]
                             (let [instruction (string/replace instruction "fold along " "")
-                                  [dimension coord] (string/split instruction #"=")
-                                  instruction [(keyword dimension) (Integer/parseInt coord)]]
+                                  [axis coord] (string/split instruction #"=")
+                                  instruction [(keyword axis) (Integer/parseInt coord)]]
                               instruction)) instructions)]
     {:dots dots :instructions instructions}))
-(defn fold-up
-  [dots coord]
-  (let [[keep-dots folding-dots] (->> dots
-                                      (group-by #(< coord (second %)))
-                                      (#(conj [] (get % false) (get % true))))
-        folded-dots (map (fn fold-dots[[x y]]
-                           [x (- (* 2 coord) y)]) folding-dots)]
-    (into #{} (concat keep-dots folded-dots))))
 
-
-(defn fold-left
-  [dots coord]
-  (let [[keep-dots folding-dots] (->> dots
-                                      (group-by #(< coord (first %)))
-                                      (#(conj [] (get % false) (get % true))))
-        folded-dots (map (fn fold-dots[[x y]]
-                           [(- (* 2 coord) x) y]) folding-dots)]
-    (into #{} (concat keep-dots folded-dots))))
-
-(defn fold
+(defn fold-paper
   [dots instruction]
-  (case (first instruction)
-    :y (fold-up dots (second instruction))
-    :x (fold-left dots (second instruction))))
+  (let [[axis coord] instruction
+        [keep-dots folding-dots] (->> dots
+                                      (group-by #(< coord (get % axis)))
+                                      (#(conj [] (get % false) (get % true))))
+        folded-dots (map (fn fold-dots[dot]
+                           (update dot axis #(- (* 2 coord) %))) folding-dots)]
+    (into #{} (concat keep-dots folded-dots))))
 
 (defn part1
   [filename]
@@ -50,7 +36,7 @@
                                          slurp
                                          parse-input)]
     (-> dots
-        (fold (first instructions))
+        (fold-paper (first instructions))
         count)))
 
 (assert (= 17 (part1 "day13.example")))
@@ -59,11 +45,11 @@
 (defn dots->grid
   [dots]
   (let [dots (into #{} dots)
-        max-x (apply max (map first dots))
-        max-y (apply max (map second dots))]
+        max-x (apply max (map :x dots))
+        max-y (apply max (map :y dots))]
     (for [y (range (inc max-y))]
       (for [x (range (inc max-x))]
-        (if (dots [x y])
+        (if (dots {:x x :y y})
           \#
           \.)))))
 
