@@ -64,21 +64,21 @@
   (let [graph (->> filename
                    slurp
                    parse-input)
-        max-x (apply max (map first (keys graph)))
-        max-y (apply max (map second (keys graph)))
-        graph' (into {} (for [x (range (* 5 (inc max-x)))
-                              y (range (* 5 (inc max-y)))]
+        ncols (count (set (map first (keys graph))))
+        nrows (count (set (map second (keys graph))))
+        graph' (into {} (for [x (range (* 5 ncols))
+                              y (range (* 5 nrows))]
                           (let [node [x y]
-                                base-cost (get graph [(rem x (inc max-x)) (rem y (inc max-y))])
-                                extra-cost (+ (int (/ x (inc max-x))) (int (/ y (inc max-x))))
+                                base-cost (get graph [(rem x ncols) (rem y nrows)])
+                                extra-cost (+ (int (/ x ncols)) (int (/ y nrows)))
                                 cost (+ base-cost extra-cost)
                                 clamped-cost (inc (rem (dec cost) 9))]
                             [node clamped-cost])))
 
         from [0 0]
-        max-x' (apply max (map first (keys graph')))
-        max-y' (apply max (map second (keys graph')))
-        to [max-x' max-y']
+        max-x (apply max (map first (keys graph')))
+        max-y (apply max (map second (keys graph')))
+        to [max-x max-y]
         answer (find-path graph' from to)]
     answer))
 
