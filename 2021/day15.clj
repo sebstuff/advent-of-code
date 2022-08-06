@@ -8,7 +8,7 @@
        string/split-lines
        (mapcat (fn [row line]
                  (map (fn [col risk]
-                           [[row col] (- (int risk) (int \0))])
+                           [[col row] (- (int risk) (int \0))])
                          (range)
                          line))
                (range))
@@ -57,3 +57,30 @@
 
 
 (println "part1" (part1 "day15.input"))
+
+
+(defn part2
+  [filename]
+  (let [graph (->> filename
+                   slurp
+                   parse-input)
+        max-x (apply max (map first (keys graph)))
+        max-y (apply max (map second (keys graph)))
+        graph' (into {} (for [x (range (* 5 (inc max-x)))
+                              y (range (* 5 (inc max-y)))]
+                          (let [node [x y]
+                                base-cost (get graph [(rem x (inc max-x)) (rem y (inc max-y))])
+                                extra-cost (+ (int (/ x (inc max-x))) (int (/ y (inc max-x))))
+                                cost (+ base-cost extra-cost)
+                                clamped-cost (inc (rem (dec cost) 9))]
+                            [node clamped-cost])))
+
+        from [0 0]
+        max-x' (apply max (map first (keys graph')))
+        max-y' (apply max (map second (keys graph')))
+        to [max-x' max-y']
+        answer (find-path graph' from to)]
+    answer))
+
+
+(println "part2" (part2 "day15.input"))
