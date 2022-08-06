@@ -1,5 +1,6 @@
 (ns day15
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [clojure.data.priority-map :refer [priority-map]]))
 
 
 (defn parse-input
@@ -18,7 +19,7 @@
 (defn find-path
   [graph from to]
   (loop [node from
-         visit-nodes #{from}
+         visit-nodes (priority-map from 0)
          paths {from []}
          paths-costs {from 0}]
     (if (= to node)
@@ -38,9 +39,8 @@
             neighbors (filter #(< (get neighbor-costs %) (get paths-costs % Integer/MAX_VALUE)) prelim-neighbors)
             paths-costs' (merge paths-costs (select-keys neighbor-costs neighbors))
             paths' (reduce (fn [sofar neighbor] (assoc sofar neighbor (conj path neighbor))) paths neighbors)
-            visit-nodes' (disj (set (concat visit-nodes neighbors)) node)
-
-            next-node (first (sort-by #(get paths-costs' %) visit-nodes'))]
+            visit-nodes' (dissoc (into visit-nodes (select-keys neighbor-costs neighbors)) node)
+            [next-node _] (first visit-nodes')]
         (recur next-node visit-nodes' paths' paths-costs')))))
 
 
