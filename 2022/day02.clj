@@ -47,7 +47,7 @@
     \Y :paper
     \Z :scissors))
 
-(defn parse-round
+(defn ^:dynamic parse-round
   [str]
   [(opponent-letter->play (nth str 0))
    (my-letter->play (nth str 2))])
@@ -90,6 +90,6 @@
         me (play-for-result opponent desired-result)]
     [opponent me]))
 
-(with-redefs [parse-round parse-round-part2]
+(binding [parse-round parse-round-part2]
   (assert (= 12 (part1 "day02.example")))
   (assert (= 13726 (part1 "day02.input"))))
