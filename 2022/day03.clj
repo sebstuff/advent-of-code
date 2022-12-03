@@ -42,3 +42,17 @@
 
 (assert (= 70 (part2 "day03.example")))
 (assert (= 2363 (part2 "day03.input")))
+
+;;; transducer example
+(defn part2-xf
+  [filename]
+  (->> (load-sacks filename)
+       (partition 3 3)
+       (transduce (comp (map (fn [group] (map set group)))
+                        (map #(apply set/intersection %))
+                        (map first)
+                        (map item-priority))
+                  + 0)))
+
+(assert (= 70 (part2-xf "day03.example")))
+(assert (= 2363 (part2-xf "day03.input")))
