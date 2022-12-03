@@ -21,7 +21,7 @@
   [opponent me]
   (cond
     (= me opponent) :draw
-    (= me (get loses-against-play opponent)) :win
+    (= me (loses-against-play opponent)) :win
     :else :lose))
 
 (assert (= :lose (round-result :rock :scissors)))
@@ -30,8 +30,8 @@
 
 (defn score-round
   [opponent me]
-  (+ (get play-score me)
-     (get result-score (round-result opponent me))))
+  (+ (play-score me)
+     (result-score (round-result opponent me))))
 
 (defn opponent-letter->play
   [l]
@@ -79,8 +79,8 @@
 (defn play-for-result
   [opponent result]
   (case result
-    :win (get loses-against-play opponent)
-    :lose (get wins-against-play opponent)
+    :win (loses-against-play opponent)
+    :lose (wins-against-play opponent)
     :draw opponent))
 
 (defn parse-round-part2
