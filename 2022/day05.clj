@@ -1,28 +1,50 @@
 (ns day05
   (:require [clojure.string :as str]))
 
+(defn parse-crate-slice
+  [stacks crate-slice-data]
+  (loop [stacks stacks
+         idx 0]
+    (let [pos (inc (* idx 4))
+          crate (get crate-slice-data pos)]
+      (if crate
+        (if (not= \space crate)
+          (recur (update stacks idx conj crate) (inc idx))
+          (recur stacks (inc idx)))
+        stacks))))
+
 (defn parse-stacks
   [data]
   (let [[stack-data data] (str/split data #"\n\n")
-        ;; crate-slices contains horizontal "slices" of the crates,
-        ;; and each crate is paired with its stack number
-        crate-slices (for [line (str/split-lines stack-data)
-                           :when (not= \1 (get line 1))]
-                       (for [idx (range)
-                             :let [pos (inc (* idx 4))]
-                             :while (< pos (count line))]
-                         [idx (get line pos)]))
-        ;; we need to take those crate slices, and put them in the correct stack
-        stacks (reduce (fn stackify-slice[sofar slice]
-                         (reduce (fn stackify-crate[sofar' [idx crate]]
-                                   (if (not= crate \space)
-                                     (assoc sofar' idx (conj (get sofar' idx) crate))
-                                     sofar'))
-                                 sofar
-                                 slice))
-                       []
-                       (reverse crate-slices))]
+        crate-slices (filter #(not= \1 (get % 1))
+                             (str/split-lines stack-data))
+        stacks (reduce parse-crate-slice [] (reverse crate-slices))]
     [data stacks]))
+
+;;; old function - for comparison's sake
+(comment
+  (defn parse-stacks
+    [data]
+    (let [[stack-data data] (str/split data #"\n\n")
+          ;; crate-slices contains horizontal "slices" of the crates,
+          ;; and each crate is paired with its stack number
+          crate-slices (for [line (str/split-lines stack-data)
+                             :when (not= \1 (get line 1))]
+                         (for [idx (range)
+                               :let [pos (inc (* idx 4))]
+                               :while (< pos (count line))
+                               :when (not= \space (get line pos))]
+                           [idx (get line pos)]))
+          ;; we need to take those crate slices, and put them in the correct stack
+          stacks (reduce (fn stackify-slice[sofar slice]
+                           (reduce (fn stackify-crate[sofar' [idx crate]]
+                                     (update sofar' idx conj  crate))
+                                   sofar
+                                   slice))
+                         []
+                         (reverse crate-slices))]
+      [data stacks]))
+  )
 
 (defn parse-moves
   [data]
