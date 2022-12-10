@@ -16,7 +16,7 @@
        (str/split-lines)
        (mapv #(mapv (comp parse-long str) %))))
 
-(defn visible-from-coord-list
+(defn visible-across-coord-list
   "Returns trees visible when looking across the list of coords"
   [forest coord-list]
   (loop [visible #{}
@@ -29,16 +29,16 @@
         (recur visible' rest-coords (max top-tree tree))
         visible'))))
 
-(defn visible-from-coord-lists
-  "Kinda like visible-from-coord-list, but its a list of a list of coords"
+(defn visible-across-coord-lists
+  "Kinda like visible-across-coord-list, but its a list of a list of coords"
   [forest coord-lists]
-  (reduce #(set/union %1 (visible-from-coord-list forest %2))
+  (reduce #(set/union %1 (visible-across-coord-list forest %2))
           #{}
           coord-lists))
 
 (defn visible-from-left
   [forest]
-  (visible-from-coord-lists
+  (visible-across-coord-lists
    forest
    (for [y (range (height forest))]
      (for [x (range (width forest))]
@@ -46,7 +46,7 @@
 
 (defn visible-from-right
   [forest]
-  (visible-from-coord-lists
+  (visible-across-coord-lists
    forest
   (for [y (range (height forest))]
      (for [x (range (dec (width forest)) 0 -1)]
@@ -54,7 +54,7 @@
 
 (defn visible-from-top
   [forest]
-  (visible-from-coord-lists
+  (visible-across-coord-lists
    forest
    (for [x (range (width forest))]
      (for [y (range (height forest))]
@@ -62,7 +62,7 @@
 
 (defn visible-from-bottom
   [forest]
-  (visible-from-coord-lists
+  (visible-across-coord-lists
    forest
    (for [x (range (width forest))]
      (for [y (range (dec (height forest)) 0 -1)]
