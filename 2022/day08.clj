@@ -16,85 +16,57 @@
        (str/split-lines)
        (mapv #(mapv (comp parse-long str) %))))
 
-(defn visible-from-left
-  [forest]
+(defn visible-from-coord-list
+  "Returns trees visible when looking across the list of coords"
+  [forest coord-list]
   (loop [visible #{}
-         x 0
-         y 0
+         [[x y] & rest-coords] coord-list
          top-tree -1]
     (let [tree (get-in forest [y x])
           visible? (> tree top-tree)
           visible' (if visible? (conj visible [x y]) visible)]
-      (cond
-        (and (= (inc x) (width forest))
-             (= (inc y) (height forest)))
-        visible'
+      (if (seq rest-coords)
+        (recur visible' rest-coords (max top-tree tree))
+        visible'))))
 
-        (= (inc x) (width forest))
-        (recur visible' 0 (inc y) -1)
+(defn visible-from-coord-lists
+  "Kinda like visible-from-coord-list, but its a list of a list of coords"
+  [forest coord-lists]
+  (reduce #(set/union %1 (visible-from-coord-list forest %2))
+          #{}
+          coord-lists))
 
-        :else
-        (recur visible' (inc x) y (max top-tree tree))))))
+(defn visible-from-left
+  [forest]
+  (visible-from-coord-lists
+   forest
+   (for [y (range (height forest))]
+     (for [x (range (width forest))]
+       [x y]))))
 
 (defn visible-from-right
   [forest]
-  (loop [visible #{}
-         x (dec (width forest))
-         y 0
-         top-tree -1]
-    (let [tree (get-in forest [y x])
-          visible? (> tree top-tree)
-          visible' (if visible? (conj visible [x y]) visible)]
-      (cond
-        (and (= 0 x)
-             (= (inc y) (height forest)))
-        visible'
-
-        (= x 0)
-        (recur visible' (dec (width forest)) (inc y) -1)
-
-        :else
-        (recur visible' (dec x) y (max top-tree tree))))))
+  (visible-from-coord-lists
+   forest
+  (for [y (range (height forest))]
+     (for [x (range (dec (width forest)) 0 -1)]
+       [x y]))))
 
 (defn visible-from-top
   [forest]
-  (loop [visible #{}
-         x 0
-         y 0
-         top-tree -1]
-    (let [tree (get-in forest [y x])
-          visible? (> tree top-tree)
-          visible' (if visible? (conj visible [x y]) visible)]
-      (cond
-        (and (= (inc x) (width forest))
-             (= (inc y) (height forest)))
-        visible'
-
-        (= (inc y) (height forest))
-        (recur visible' (inc x) 0 -1)
-
-        :else
-        (recur visible' x (inc y) (max top-tree tree))))))
+  (visible-from-coord-lists
+   forest
+   (for [x (range (width forest))]
+     (for [y (range (height forest))]
+       [x y]))))
 
 (defn visible-from-bottom
   [forest]
-  (loop [visible #{}
-         x 0
-         y (dec (height forest))
-         top-tree -1]
-    (let [tree (get-in forest [y x])
-          visible? (> tree top-tree)
-          visible' (if visible? (conj visible [x y]) visible)]
-      (cond
-        (and (= (inc x) (width forest))
-             (= y 0))
-        visible'
-
-        (= 0 y)
-        (recur visible' (inc x) (dec (height forest)) -1)
-
-        :else
-        (recur visible' x (dec y) (max top-tree tree))))))
+  (visible-from-coord-lists
+   forest
+   (for [x (range (width forest))]
+     (for [y (range (dec (height forest)) 0 -1)]
+       [x y]))))
 
 (defn part1
   [filename]
