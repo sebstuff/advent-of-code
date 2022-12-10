@@ -80,54 +80,35 @@
 (assert (= 21 (part1 "day08.example")))
 (assert (= 1809 (part1 "day08.input")))
 
+(defn scenic-score-using-coord-list
+  "Calculates the scenic score from a tree when looking out across a list of coords."
+  [forest x y coords]
+  (let [coords-lower (take-while
+                      #(> (get-in forest [y x])
+                          (get-in forest [(second %) (first %)]))
+                      coords)]
+    (min (inc (count coords-lower))
+         (count coords))))
 
 (defn scenic-score
   [forest x y]
-  (let [up-score (loop [score 0
-                        y' (dec y)]
-                   (cond
-                     (= -1 y')
-                     score
-
-                     (>= (get-in forest [y' x]) (get-in forest [y x]))
-                     (inc score)
-
-                     :else
-                     (recur (inc score) (dec y'))))
-        down-score (loop [score 0
-                        y' (inc y)]
-                   (cond
-                     (= (height forest) y')
-                     score
-
-                     (>= (get-in forest [y' x]) (get-in forest [y x]))
-                     (inc score)
-
-                     :else
-                     (recur (inc score) (inc y'))))
-        left-score (loop [score 0
-                        x' (dec x)]
-                   (cond
-                     (= -1 x')
-                     score
-
-                     (>= (get-in forest [y x']) (get-in forest [y x]))
-                     (inc score)
-
-                     :else
-                     (recur (inc score) (dec x'))))
-        right-score (loop [score 0
-                           x' (inc x)]
-                      (cond
-                        (= (width forest) x')
-                        score
-
-                        (>= (get-in forest [y x']) (get-in forest [y x]))
-                        (inc score)
-
-                        :else
-                        (recur (inc score) (inc x'))))]
-    (* up-score left-score down-score right-score)))
+  (let [up-score (scenic-score-using-coord-list
+                  forest x y
+                  (for [y' (range (dec y) -1 -1)]
+                    [x y']))
+        down-score (scenic-score-using-coord-list
+                    forest x y
+                    (for [y' (range (inc y) (height forest))]
+                      [x y']))
+        left-score (scenic-score-using-coord-list
+                    forest x y
+                    (for [x' (range (dec x) -1 -1)]
+                      [x' y]))
+        right-score (scenic-score-using-coord-list
+                     forest x y
+                     (for [x' (range (inc x) (width forest))]
+                       [x' y]))]
+    (* up-score down-score left-score right-score)))
 
 (defn part2
   [filename]
