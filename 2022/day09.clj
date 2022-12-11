@@ -118,6 +118,19 @@
                   \.))
               \newline))))))
 
+(defn knots->str
+  [knots top-x bottom-x top-y bottom-y]
+  (let [coords (zipmap (reverse knots)
+                       (range (dec (count knots)) -1 -1))]
+    (str/join
+     (for [y (range bottom-y (inc top-y))]
+       (str/join
+        (conj (for [x (range bottom-x (inc top-x))]
+                (if-let [n (get coords [x y])]
+                  (str (if (< n 10) n (char (+ (int \A) (- n 10)))))
+                  \.))
+              \newline))))))
+
 (defn solve
   [filename knots]
   (-> (load-motions filename)
@@ -125,6 +138,23 @@
       (get (dec knots))
       (set)
       (count)))
+
+(defn render-solve
+  [filename num-knots]
+  (let [motions (load-motions filename)
+        knots-paths (play-motions motions num-knots)
+        xs (mapcat #(map first %) knots-paths)
+        ys (mapcat #(map second %) knots-paths)
+        top-x (apply max xs)
+        bottom-x (apply min xs)
+        top-y (apply max ys)
+        bottom-y (apply min ys)]
+    (loop [frame 0]
+      (println (knots->str (map #(nth % frame) knots-paths)
+                           top-x bottom-x top-y bottom-y))
+      (Thread/sleep 50)
+      (when (< frame (dec (count (first knots-paths))))
+        (recur (inc frame))))))
 
 (defn part1
   [filename]
@@ -140,3 +170,5 @@
 
 (assert (= 36 (part2 "day09.example2")))
 (assert (= 2607 (part2 "day09.input")))
+
+(render-solve "day09.example2" 10)
