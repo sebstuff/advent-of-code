@@ -1,6 +1,7 @@
 (ns day11
-  (:require [clojure.string :as str]
-            [clojure.math.numeric-tower :refer [lcm]]))
+  (:require [clojure.string :as str]))
+
+(def ^:dynamic *worry-filter* nil)
 
 (defn parse-monkey
   [s]
@@ -41,7 +42,7 @@
         [item & items] (:items monkey)]
     (if item
       (let [item' ((:operation-fn monkey) item)
-            item' (int (/ item' 3))
+            item' (*worry-filter* item')
             next-monkey (monkey-tosses-to monkey item')]
         (recur (-> monkeys
                    (assoc-in [idx :items] (vec items))
@@ -66,19 +67,30 @@
     monkeys
     (recur (process-round monkeys) (dec rounds))))
 
-(defn solve
-  [filename rounds]
-  (let [monkeys (load-monkeys filename)
-        monkeys (run-rounds monkeys rounds)]
-    (->> monkeys
-         (sort-by :inspected #(compare %2 %1))
-         (take 2)
-         (map :inspected)
-         (apply *))))
-
 (defn part1
   [filename]
-  (solve filename 20))
+  (binding [*worry-filter* #(int (/ % 3))]
+    (let [monkeys (load-monkeys filename)
+          monkeys (run-rounds monkeys 20)]
+      (->> monkeys
+           (sort-by :inspected #(compare %2 %1))
+           (take 2)
+           (map :inspected)
+           (apply *)))))
 
 (assert (= 10605 (part1 "day11.example")))
 (assert (= 151312 (part1 "day11.input")))
+
+(defn part2
+  [filename]
+  (let [monkeys (load-monkeys filename)
+        divisor-product (apply * (map :divisor monkeys))]
+    (binding [*worry-filter* #(mod % divisor-product)]
+      (->> (run-rounds monkeys 10000)
+           (sort-by :inspected #(compare %2 %1))
+           (take 2)
+           (map :inspected)
+           (apply *)))))
+
+(assert (= 2713310158 (part2 "day11.example")))
+(assert (= 51382025916 (part2 "day11.input")))
