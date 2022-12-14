@@ -26,9 +26,11 @@
     (if running
       device'
       (let [[run & instructions'] instructions]
-        (-> device'
-            (assoc :instructions instructions')
-            (assoc :running [run (cycles-to-run run)]))))))
+        (if run
+          (-> device'
+              (assoc :instructions instructions')
+              (assoc :running [run (cycles-to-run run)]))
+          device')))))
 
 (defn during-cycle
   "Performs operations done during the cycle"
@@ -69,10 +71,15 @@
   (->> (slurp filename)
        (str/split-lines)))
 
+(defn run-instructions
+  [device]
+  (rest (take-while #(or (seq (:instructions %))
+                         (:running %)) (iterate cycle device))))
+
 (defn part1
   [filename]
   (let [device (make-device (load-instructions filename))
-        devices (take-while #(seq (:instructions %)) (iterate cycle device))]
+        devices (run-instructions device)]
     (->> devices
          (map #(select-keys % [:cycle :register]))
          (filter #(or (= 0 (mod (- (:cycle %) 20) 40))
@@ -82,3 +89,28 @@
 
 (assert (= 13140 (part1 "day10.example")))
 (assert (= 11820 (part1 "day10.input")))
+
+
+(defn render-pixel
+  [line [register pixel]]
+  (if (#{pixel (dec pixel) (inc pixel)} register)
+    (str line \#)
+    (str line \.)))
+
+(defn render-line
+  [registers]
+  (reduce render-pixel "" (map #(vec [%1 %2]) registers (range))))
+
+(defn part2
+  [filename]
+  (let [device (make-device (load-instructions filename))
+        devices (run-instructions device)]
+    (->> devices
+         (map :register)
+         (partition 40)
+         (map render-line)
+         (str/join "\n"))))
+
+(println (part2 "day10.example"))
+(println)
+(println (part2 "day10.input"))
