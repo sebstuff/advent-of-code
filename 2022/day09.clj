@@ -172,3 +172,6 @@
 (assert (= 2607 (part2 "day09.input")))
 
 (render-solve "day09.example2" 10)
+
+(sequence cat [[1 2 3] [4 5 6]])
+(map )
