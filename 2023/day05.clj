@@ -3,80 +3,80 @@
 
 (defn ->range
   [start count]
-  [start count])
+  [start (+ start (dec count)) count])
 
 (defn in-range?
-  [[start count] n]
-  (<= start n (+ start count)))
-(assert true (in-range? (->range 0 3) 0))
-(assert true (in-range? (->range 0 3) 1))
-(assert true (in-range? (->range 0 3) 2))
-(assert true (in-range? (->range 0 3) 3))
+  [[start end count] n]
+  (<= start n end))
+(assert (in-range? (->range 0 3) 0))
+(assert (in-range? (->range 0 3) 1))
+(assert (in-range? (->range 0 3) 2))
+(assert (not (in-range? (->range 0 3) 3)))
 
 (defn translate-to-range
   [from-range to-range n]
   (+ (first to-range) (- n (first from-range))))
 (assert (= 4 (translate-to-range (->range 0 3) (->range 4 3) 0)))
 
+(defn ->rule
+  [from to count]
+  {:from (->range from count)
+   :to (->range to count)})
+
+(defn ->ruleset
+  [name rules]
+  {:name name :rules (vec (sort-by :from rules))})
+
+(defn rule-for-number
+  [ruleset n]
+  (first (filter #(in-range? (:from %) n) ruleset)) )
+
 (defn lookup
-  [{:keys [ranges]} n]
-  (let [range (first (filter #(in-range? (:from %) n) ranges))]
-    (if (empty? range)
+  [{:keys [rules]} n]
+  (let [rule (rule-for-number rules n)]
+    (if (empty? rule)
       n
-      (translate-to-range (:from range) (:to range) n))))
+      (translate-to-range (:from rule) (:to rule) n))))
 
-(defn parse-sparse-map
-  [s];[_ name & rows]
-  (let [[_ name _ ranges] (re-find #"([a-zA-Z-]+)( map)?:\n?([\d\n\r ]+)+$" s)
-        [_ prev-name next-name] (re-find #"([a-zA-Z]+)-to-([a-zA-Z]+)" name)
-        ranges (mapv (fn parse-row[r]
-                       (let [[_ to from count] (re-find #"(\d+) +(\d+) +(\d+)" r)
-                             from (parse-long from)
-                             to (parse-long to)
-                             count (parse-long count)]
-                         {:from (->range from count)
-                          :to (->range to count)}))
-                     (str/split ranges #"\n"))]
-    {:name name :prev-name prev-name :next-name next-name :ranges ranges}))
+(defn parse-ruleset
+  [s]
+  (let [[_ name _ rules] (re-find #"([a-zA-Z-]+)( map)?:\n?([\d\n\r ]+)+$" s)
+        rules (map (fn parse-row[r]
+                     (let [[_ to from count] (re-find #"(\d+) +(\d+) +(\d+)" r)]
+                       (->rule (parse-long from) (parse-long to) (parse-long count))))
+                   (str/split rules #"\n"))]
+    (->ruleset name rules)))
 
-(defn seed-location
-  [sparse-maps seed]
+(defn apply-rulesets
+  [rulesets n]
   (loop [map-idx 0
-         value seed]
-    (if (>= map-idx (count sparse-maps))
+         value n]
+    (if (>= map-idx (count rulesets))
       value
-      (let [sparse-map (nth sparse-maps map-idx)]
-        (recur (inc map-idx) (lookup sparse-map value))))))
+      (let [ruleset (nth rulesets map-idx)]
+        (recur (inc map-idx) (lookup ruleset value))))))
 
 (defn part1
   [filename]
-  (let [[seeds & sparse-map-strs] (-> (slurp filename)
+  (let [[seeds & ruleset-strs] (-> (slurp filename)
                                       (str/split #"\n\n"))
         seeds (mapv parse-long (re-seq #"\d+" seeds))
-        sparse-maps (mapv parse-sparse-map
-                          sparse-map-strs)]
+        rulesets (mapv parse-ruleset
+                          ruleset-strs)]
     (->> seeds
-         (mapv #(seed-location sparse-maps %))
+         (mapv #(apply-rulesets rulesets %))
          (apply min))))
 
 (assert (= 35 (part1 "day05.example")))
 (time (assert (= 403695602 (part1 "day05.input"))))
 
-(defn reverse-lookup
-  [{:keys [ranges]} n]
-  (let [range (first (filter #(in-range? (:to %) n) ranges))]
-    (if (empty? range)
-      n
-      (translate-to-range (:to range) (:from range) n))))
+(defn invert-rule [rule]
+  (let [{:keys [from to]} rule]
+    {:from to :to from}))
 
-(defn location-seed
-  [sparse-maps location]
-  (loop [map-idx (dec (count sparse-maps))
-         value location]
-    (if (< map-idx 0)
-      value
-      (let [sparse-map (nth sparse-maps map-idx)]
-        (recur (dec map-idx) (reverse-lookup sparse-map value))))))
+(defn invert-ruleset
+  [ruleset]
+  (update ruleset :rules #(mapv invert-rule %) ))
 
 (defn seed?
   [seeds seed]
@@ -85,13 +85,15 @@
 
 (defn part2
   [filename]
-  (let [[seeds & sparse-map-strs] (-> (slurp filename)
-                                      (str/split #"\n\n"))
+  (let [[seeds & ruleset-strs] (-> (slurp filename)
+                                   (str/split #"\n\n"))
         seeds (mapv parse-long (re-seq #"\d+" seeds))
-        sparse-maps (mapv parse-sparse-map
-                          sparse-map-strs)]
+        rulesets (->> ruleset-strs
+                      (mapv parse-ruleset)
+                      (reverse)
+                      (mapv invert-ruleset))]
     (loop [location 0]
-      (let [seed (location-seed sparse-maps location)]
+      (let [seed (apply-rulesets rulesets location)]
         (when (and (not= 0 location) (= 0 (mod location 1000000)))
           (println "location" location "seed" seed))
         (if (seed? seeds seed)
