@@ -110,18 +110,20 @@
 
 (defn wild-hand-strength
   [hand]
-  (let [card-matches (->> (frequencies hand)
+  (let [wildcards (count (filter #(= \J %) hand))
+        card-matches (->> hand
+                          (remove #(= \J %))
+                          (frequencies)
                           (map reverse)
-                          (sort-by first >))
-        wildcards (first (filter #(= \J (second %)) card-matches))
-        card-matches (filterv #(not= \J (second %)) card-matches)
-        card-matches (if (nil? wildcards)
-                       card-matches
+                          (sort-by first >)
+                          (vec))
+        card-matches (case wildcards
+                       0 card-matches
+                       5 [[wildcards \J]]
                        (update card-matches 0 (fn apply-wildcards[[count card]]
-                                                (if (nil? count)
-                                                  wildcards
-                                                  [(+ count (first wildcards)) card]))))
-        new-hand (apply concat (map #(repeat (first %) (second %)) card-matches))]
+                                                [(+ count wildcards) card])))
+        new-hand (apply concat (map #(repeat (first %) (second %))
+                                    card-matches))]
     (hand-strength new-hand)))
 
 (def wild-suit-strengths
