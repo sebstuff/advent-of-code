@@ -36,6 +36,7 @@
       (recur spots (f result data spot))
       result)))
 
+
 (defn part1
   [filename]
   (->> (slurp filename)
@@ -43,3 +44,19 @@
        (xmas-reduce count-xmas-at 0)))
 
 (println (part1 "day04.input"))
+
+(defn count-mas-x-at
+  [sofar data [r c :as spot]]
+  (if (and (= \A (get-in data spot))
+           (= #{\M \S} (set [(get-in data [(dec r) (dec c)]) (get-in data [(inc r) (inc c)])]))
+           (= #{\M \S} (set [(get-in data [(dec r) (inc c)]) (get-in data [(inc r) (dec c)])])))
+    (inc sofar)
+    sofar))
+
+(defn part2
+  [filename]
+  (->> (slurp filename)
+       (parse-input)
+       (xmas-reduce count-mas-x-at 0)))
+
+(println (part2 "day04.input"))
