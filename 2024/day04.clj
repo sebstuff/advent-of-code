@@ -17,9 +17,12 @@
                                       [dr dc])
            total sofar]
       (if direction
-        (if (and (= \M (get-in data (map #(+ %1 (* 1 %2)) spot direction)))
-                 (= \A (get-in data (map #(+ %1 (* 2 %2)) spot direction)))
-                 (= \S (get-in data (map #(+ %1 (* 3 %2)) spot direction))))
+        (if (and (= \M (get-in data
+                               (map #(+ %1 (* 1 %2)) spot direction)))
+                 (= \A (get-in data
+                               (map #(+ %1 (* 2 %2)) spot direction)))
+                 (= \S (get-in data
+                               (map #(+ %1 (* 3 %2)) spot direction))))
           (recur directions (inc total))
           (recur directions total))
         total))
@@ -48,8 +51,10 @@
 (defn count-mas-x-at
   [sofar data [r c :as spot]]
   (if (and (= \A (get-in data spot))
-           (= #{\M \S} (set [(get-in data [(dec r) (dec c)]) (get-in data [(inc r) (inc c)])]))
-           (= #{\M \S} (set [(get-in data [(dec r) (inc c)]) (get-in data [(inc r) (dec c)])])))
+           (= #{\M \S} (set [(get-in data [(dec r) (dec c)])
+                             (get-in data [(inc r) (inc c)])]))
+           (= #{\M \S} (set [(get-in data [(dec r) (inc c)])
+                             (get-in data [(inc r) (dec c)])])))
     (inc sofar)
     sofar))
 
