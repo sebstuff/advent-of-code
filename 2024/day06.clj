@@ -67,21 +67,25 @@
         next-position (next-position guard)]
     (if-not (obstacles next-position)
       (-> state 
-          (update :path conj {:direction (:facing guard)
+          (update :path conj! {:direction (:facing guard)
                               :position (:position guard)})
-          (update :unique-path conj {:direction (:facing guard)
+          (update :unique-path conj! {:direction (:facing guard)
                                      :position (:position guard)})
           (assoc-in [:guard :position] next-position))
       (update-in state [:guard :facing] guard-turns))))
 
 (defn simulate
   [state]
-  (loop [state state]
+  (loop [state (-> state
+                   (update :path transient)
+                   (update :unique-path transient))]
     (let [state' (simulate-step state)]
       (if (and (guard-on-map? state')
                (not (guard-looping? state')))
         (recur state')
-        state'))))
+        (-> state'
+            (update :path persistent!)
+            (update :unique-path persistent!))))))
 
 (defn part1
   [filename]
@@ -114,5 +118,4 @@
          (count))))
 
 (println (time (part2 "day06.input")))
-
 (shutdown-agents)
