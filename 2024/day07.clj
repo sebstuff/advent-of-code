@@ -14,31 +14,28 @@
   (->> (str/split-lines s)
        (mapv parse-equation)))
 
-(defn apply-operations
-  [equation operations]
-  (let [{:keys [nums]} equation]
-    (loop [[num & nums-rest] (rest nums)
-           [operation & operations] operations
-           acc (first nums)]
-      (if num
-        (recur nums-rest operations (operation acc num))
-        acc))))
-
 (defn solvable?
   [equation valid-operations]
-  (let [{:keys [test-value nums]} equation
-        num-operations (dec (count nums))
-        ;; kinda hacky. In order to use permuated-combinations we need to have the list
-        ;; duplicate each operation based upon the number of times we might use it - e.g.
-        ;; if there are 4 nums, we need this list to have 3 of each passed in valid-operation
-        hacky-valid-operations (reduce (fn [sofar operation]
-                                         (concat sofar (repeat num-operations operation)))
-                                       []
-                                       valid-operations)
-        operation-combos (combos/permuted-combinations hacky-valid-operations num-operations)]
-    (some (fn operations-solves-equation?[operations]
-            (= test-value (apply-operations equation operations)))
-          operation-combos)))
+  (let [{:keys [test-value nums]} equation]
+    (letfn [(try-make-test-value [acc nums]
+              ;; Try to make the test value.  If it fails, the value returned will be nonsense.  If it
+              ;; succeeds, it will return the test value.
+              ;;
+              ;; This is recursively called, and loops over each valid operation.  If at any time the
+              ;; potential answer is greater than the test value, it breaks out early.
+              (if-let [num (first nums)]
+                (loop [[operation & operations] valid-operations]
+                  (if operation
+                    (let [acc' (operation acc num)]
+                      (if (<= acc' test-value)
+                        (let [acc'' (try-make-test-value acc' (rest nums))]
+                          (if (= acc'' test-value)
+                            acc''
+                            (recur operations)))
+                        (recur operations)))
+                    0))
+                acc))]
+      (= test-value (try-make-test-value (first nums) (rest nums))))))
 
 (defn total-calibration-result
     [equations valid-operations]
