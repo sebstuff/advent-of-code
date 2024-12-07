@@ -31,7 +31,8 @@
                                                obstacles-sofar)]
                         (recur coords-rest obstacles-sofar'))
                       obstacles-sofar))]
-    {:guard guard
+    {:guard-position (:position guard)
+     :guard-facing (:facing guard)
      :path []
      :unique-path #{}
      :obstacles obstacles
@@ -40,10 +41,10 @@
 
 (defn next-position
   "Calculates the next position the guard would have."
-  [guard]
-  (let [{:keys [position facing]} guard
-        [row col] position]
-    (case facing
+  [state]
+  (let [{:keys [guard-position guard-facing]} state
+        [row col] guard-position]
+    (case guard-facing
       :up [(dec row) col]
       :right [row (inc col)]
       :down [(inc row) col]
@@ -51,8 +52,8 @@
 
 (defn guard-on-map?
   [state]
-  (let [{:keys [guard rows cols]} state
-        [row col] (:position guard)]
+  (let [{:keys [guard-position rows cols]} state
+        [row col] guard-position]
     (and (< -1 row rows)
          (< -1 col cols))))
 
@@ -63,16 +64,16 @@
 
 (defn simulate-step
   [state]
-  (let [{:keys [guard obstacles] :as state} state
-        next-position (next-position guard)]
+  (let [{:keys [guard-facing guard-position obstacles]} state
+        next-position (next-position state)]
     (if-not (obstacles next-position)
       (-> state 
-          (update :path conj! {:direction (:facing guard)
-                              :position (:position guard)})
-          (update :unique-path conj! {:direction (:facing guard)
-                                     :position (:position guard)})
-          (assoc-in [:guard :position] next-position))
-      (update-in state [:guard :facing] guard-turns))))
+          (update :path conj! {:direction guard-facing
+                              :position guard-position})
+          (update :unique-path conj! {:direction guard-facing
+                                     :position guard-position})
+          (assoc :guard-position next-position))
+      (update state :guard-facing guard-turns))))
 
 (defn simulate
   [state]
@@ -109,7 +110,7 @@
                                           (map :position)
                                           (set)
                                           ;; can't place on guard start
-                                          (#(disj % (get-in state [:guard :position]))))]
+                                          (#(disj % (get state :guard-position))))]
     (->> candidate-obstacle-positions
          (map (fn insert-obstacle[obstacle-position]
                 (update state :obstacles conj obstacle-position)))
