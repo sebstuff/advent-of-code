@@ -1,0 +1,2 @@
+{:deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.5.1"}
+        org.clojure/math.combinatorics {:mvn/version "0.3.0"}}}
