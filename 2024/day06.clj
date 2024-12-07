@@ -68,23 +68,25 @@
         next-position (next-position state)]
     (if-not (obstacles next-position)
       (-> state 
-          (update :path conj! {:direction guard-facing
-                              :position guard-position})
-          (update :unique-path conj! {:direction guard-facing
-                                     :position guard-position})
-          (assoc :guard-position next-position))
-      (update state :guard-facing guard-turns))))
+          (assoc! :path (conj! (:path state) {:direction guard-facing
+                                              :position guard-position}))
+          (assoc! :unique-path (conj! (:unique-path state) {:direction guard-facing
+                                                            :position guard-position}))
+          (assoc! :guard-position next-position))
+      (assoc! state :guard-facing (guard-turns (:guard-facing state))))))
 
 (defn simulate
   [state]
   (loop [state (-> state
                    (update :path transient)
-                   (update :unique-path transient))]
+                   (update :unique-path transient)
+                   (transient))]
     (let [state' (simulate-step state)]
       (if (and (guard-on-map? state')
                (not (guard-looping? state')))
         (recur state')
         (-> state'
+            (persistent!)
             (update :path persistent!)
             (update :unique-path persistent!))))))
 
