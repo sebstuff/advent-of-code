@@ -5,8 +5,11 @@ void main() throws Exception {
     var grid = loadGrid("day08.input");
     var antennaGroups = groupAntennas(grid);
 
-    println("Total antinodes: " + totalAntinodes(antennaGroups, grid));
+    println("Part 1 total antinodes: " + totalAntinodes(antennaGroups, grid, this::recordSingleAntinodes));
+    println("Part 2 total antinodes: " + totalAntinodes(antennaGroups, grid, this::recordInfiniteAntinodes));
 }
+
+record Position(int x, int y) {}
 
 char[][] loadGrid(String filename) throws IOException {
     var grid = new ArrayList<char[]>();
@@ -42,7 +45,36 @@ Map<Character, List<Position>> groupAntennas(char[][] grid) {
     return antennaGroups;
 }
 
-int totalAntinodes(Map<Character, List<Position>> antennaGroups, char[][] grid) {
+interface AntinodeRecorder {
+    void recordAntinodes(Position antenna1, Position antenna2, boolean[][] antinodes);
+}
+
+void recordSingleAntinodes(Position a1, Position a2, boolean[][] antinodes) {
+    var x = a1.x + a1.x - a2.x;
+    var y = a1.y + a1.y - a2.y;
+
+    if (x > -1 && x < antinodes.length 
+        && y > -1 && y < antinodes[0].length) {
+        antinodes[x][y] = true;
+    }
+}
+
+void recordInfiniteAntinodes(Position a1, Position a2, boolean[][] antinodes) {
+    var dx = a1.x - a2.x;
+    var dy = a1.y - a2.y;
+
+    var x = a1.x;
+    var y = a1.y;
+
+    while (x > -1 && x < antinodes.length 
+           && y > -1 && y < antinodes[0].length) {
+        antinodes[x][y] = true;
+        x += dx;
+        y += dy;
+    }
+}
+
+int totalAntinodes(Map<Character, List<Position>> antennaGroups, char[][] grid, AntinodeRecorder recorder) {
     var antinodes = new boolean[grid.length][grid[0].length];
 
     for (var antennas : antennaGroups.values()) {
@@ -52,15 +84,7 @@ int totalAntinodes(Map<Character, List<Position>> antennaGroups, char[][] grid) 
                     continue;
                 }
 
-                var a1 = antennas.get(i);
-                var a2 = antennas.get(j);
-                var x = a1.x + a1.x - a2.x;
-                var y = a1.y + a1.y - a2.y;
-
-                if (x > -1 && x < antinodes.length 
-                    && y > -1 && y < antinodes[0].length) {
-                    antinodes[x][y] = true;
-                }
+                recorder.recordAntinodes(antennas.get(i), antennas.get(j), antinodes);
             }
         }
     }
@@ -77,5 +101,3 @@ int totalAntinodes(Map<Character, List<Position>> antennaGroups, char[][] grid) 
 
     return totalAntinodes;
 }
-
-record Position(int x, int y) {}
