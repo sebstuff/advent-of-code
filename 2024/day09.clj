@@ -62,6 +62,14 @@
 
 (println (time (part1 "day09.input")))
 
+(defn insert![coll val start len]
+  (loop [coll coll
+         idx start]
+    (if (>= idx (+ start len))
+      coll
+      (recur (assoc! coll idx val)
+             (inc idx)))))
+
 (defn compact-files
   [disk]
   (loop [end (dec (count disk))
@@ -94,20 +102,11 @@
         (if (not= -1 free-start-idx)
           ;; move the file & clear up the space it used
           (recur (dec file-start-idx)
-                 (mapv (fn replace-file-id[existing-file-id idx]
-                         (cond
-                           ;; new spot
-                           (<= free-start-idx idx (dec (+ free-start-idx free-required)))
-                           file-id
-
-                           ;; old spot
-                           (<= file-start-idx idx end)
-                           -1
-
-                           :else
-                           existing-file-id))
-                       disk'
-                       (range (count disk'))))
+                 (-> disk'
+                     (transient)
+                     (insert! file-id free-start-idx free-required)
+                     (insert! free-block file-start-idx free-required)
+                     (persistent!)))
           (recur (dec file-start-idx)
                  disk'))))))
 
