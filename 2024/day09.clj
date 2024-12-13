@@ -1,7 +1,7 @@
 (ns day09
   (:require [clojure.string :as str]))
 
-(def free-block -1)
+(def free-marker -1)
 
 (defn load-disk-map
   [filename]
@@ -18,7 +18,7 @@
                (repeat entry (quot idx 2))
 
                :else
-               (repeat entry free-block)))
+               (repeat entry free-marker)))
            disk-map
            (range (count disk-map)))))
 
@@ -31,12 +31,12 @@
       (> start end)
       (persistent! disk')
 
-      (= free-block (get disk end))
+      (= free-marker (get disk end))
       (recur start
              (dec end)
              disk')
 
-      (not= free-block (get disk start))
+      (not= free-marker (get disk start))
       (recur (inc start)
              end
              (conj! disk' (get disk start)))
@@ -49,7 +49,7 @@
 (defn checksum
   [disk]
   (->> disk
-       (map #(if (= free-block %) 0 %))
+       (map #(if (= free-marker %) 0 %))
        (map-indexed *)
        (reduce +)))
 
@@ -70,7 +70,32 @@
       (recur (assoc! coll idx val)
              (inc idx)))))
 
-(defn compact-files
+(defn free-blocks
+  [disk]
+  (loop [idx 0
+         amount-free 0
+         free-blocks []]
+    (cond
+      (>= idx (count disk))
+      (if (> amount-free 0)
+        (conj free-blocks {:start (- idx amount-free)
+                           :end (dec idx)
+                           :amount amount-free})
+        free-blocks)
+
+      (= free-marker (get disk idx))
+      (recur (inc idx) (inc amount-free) free-blocks)
+
+      :else
+      (if (> amount-free 0)
+        (recur (inc idx)
+               0
+               (conj free-blocks {:start (- idx amount-free)
+                                  :end (dec idx)
+                                  :amount amount-free}))
+        (recur (inc idx) 0 free-blocks)))))
+
+(defn compact-files-original
   [disk]
   (loop [end (dec (count disk))
          disk' disk]
@@ -94,7 +119,7 @@
                                (= amount-free free-required)
                                (- idx amount-free)
 
-                               (= free-block (get disk' idx))
+                               (= free-marker (get disk' idx))
                                (recur (inc idx) (inc amount-free))
 
                                :else
@@ -105,16 +130,69 @@
                  (-> disk'
                      (transient)
                      (insert! file-id free-start-idx free-required)
-                     (insert! free-block file-start-idx free-required)
+                     (insert! free-marker file-start-idx free-required)
                      (persistent!)))
           (recur (dec file-start-idx)
+                 disk'))))))
+
+(defn find-free-block-idx
+  [free-blocks amount before-idx]
+  (some (fn [idx]
+          (if (and (< (:start (get free-blocks idx)) before-idx)
+                   (<= amount (:amount (get free-blocks idx))))
+            idx
+            nil))
+        (range (count free-blocks))))
+
+(defn update-free-blocks
+  [free-blocks idx amount]
+  (let [free-block (get free-blocks idx)]
+    (if (= amount (:amount free-blocks))
+      (filterv #(not= (:start free-block) (:start %))
+               free-blocks)
+      (-> free-blocks
+          (update-in [idx :start] + amount)
+          (update-in [idx :amount] - amount )))))
+
+;; roughly cuts runtime in half
+;; it keeps a list of where free blocks are found, and uses that to find them
+(defn compact-files'
+  [disk]
+  (loop [end (dec (count disk))
+         free-blocks (free-blocks disk)
+         disk' disk]
+    (cond
+      (< end 0)
+      disk'
+
+      (= -1 (get disk' end))
+      (recur (dec end) free-blocks disk')
+
+      :else
+      (let [file-id (get disk' end)
+            file-start-idx (.indexOf disk' file-id)
+            free-required (inc (- end file-start-idx))
+            free-block-idx (find-free-block-idx free-blocks free-required end)]
+        (if free-block-idx
+          (let [free-block (get free-blocks free-block-idx)
+                free-start-idx (:start free-block)]
+            (recur (dec file-start-idx)
+                   (update-free-blocks free-blocks free-block-idx free-required)
+                   (-> disk'
+                       (transient)
+                       (insert! file-id free-start-idx free-required)
+                       (insert! free-marker file-start-idx free-required)
+                       (persistent!))))
+          (recur (dec file-start-idx)
+                 free-blocks
                  disk'))))))
 
 (defn part2
   [filename]
   (->> (load-disk-map filename)
        (disk-map->disk)
-       (compact-files)
+       (compact-files')
        (checksum)))
 
+(assert (= 2858 (part2 "day09.example")))
 (println (time (part2 "day09.input")))
